@@ -1,127 +1,122 @@
-import pygame
-from pygame.locals import *
 import os
-import random
+import pygame
+import sys
+from pygame.locals import *
 
-SCREEN_WIDTH = 640
-SCREEN_HEIGHT = 480
-DATOS_IMA = 'ima'
+width = 500
+height = 200
 
-def load_image(name, colorkey = False):
-   """ Carga una imagen, devuelve una superficie y su rectángulo"""
-   
-   fullname = os.path.join(DATOS_IMA, name)
-   
-   try: image = pygame.image.load(fullname)
-   except pygame.error, message:
-      print 'No se ha podido cargar la imagen', fullname
-      raise SystemExit, message
-      
-   image = image.convert()
-   if colorkey:
-      colorkey = image.get_at((0,0))
-      image.set_colorkey(colorkey, RLEACCEL)
-   return image, image.get_rect()
-   
-class Nave(pygame.sprite.Sprite):
-   """ Este objeto representa la nave que controla el jugador"""
-   
-   def __init__(self):
-      pygame.sprite.Sprite.__init__(self)
-      self.image, self.rect = load_image('nave.gif')
-      self.rect.centerx = SCREEN_WIDTH / 2
-      self.rect.centery = SCREEN_HEIGHT - 400
-      self.speed = [0,0]
-      
-   def gravedad(self, gravedad):
-      self.speed[1] = self.speed[1] + gravedad
-      
-   def mueve_nave(self):
-      tecla = pygame.key.get_pressed()
-      
-      if tecla[K_UP]:
-         self.speed[1] = self.speed[1] - 0.3
-         
-      if tecla[K_LEFT]:
-         self.speed[0] = self.speed[0] - 0.3
-         
-      if tecla[K_RIGHT]:
-         self.speed[0] = self.speed[0] + 0.3
-      
-   def update(self):
-      if self.rect.top <1>= SCREEN_HEIGHT:
-         self.rect.bottom = SCREEN_HEIGHT
-         self.speed[1] = 0
-      if self.rect.left <1>= SCREEN_WIDTH + self.rect.width + 1:
-         self.rect.left = -self.rect.width
-      self.rect.move_ip((self.speed[0], self.speed[1]))
-      
-class Meteorito(pygame.sprite.Sprite):
-   
-   def __init__(self, rock):
-      pygame.sprite.Sprite.__init__(self)
-      self.image, self.rect = load_image(rock)
-      self.rect.centerx = random.randrange(0, SCREEN_WIDTH)
-      self.rect.centery = random.randrange(0, SCREEN_HEIGHT)
-      self.speed = [random.randrange(1, 3), random.randrange(1, 3)]
-      
-   def update(self):
-      if self.rect.top <1>= SCREEN_HEIGHT + self.rect.height + 1:
-         self.rect.top = -self.rect.height
-      if self.rect.left <1>= SCREEN_WIDTH + self.rect.width + 1:
-         self.rect.left = -self.rect.width
-      self.rect.move_ip((self.speed[0], self.speed[1]))
-   
-# ----------------------------------------------------------------------
-   
+class Bola(pygame.sprite.Sprite):
+	"Representa una bola que rebota en pantalla."
+
+	def __init__(self, x, y, radio, color=(0, 255, 0)):
+		
+		self.x, self.y = x, y
+		self.radio = radio
+		self._crear_imagen(radio, color)
+		self.rect = self.image.get_rect(self.image)
+		self.empujar(0, 0)
+
+	def _crear_imagen(self, radio, color):
+		ancho = alto = radio * 2
+		self.image = pygame.Surface((ancho, alto)).convert()
+		self.image.set_colorkey((0, 0, 0))
+		pygame.draw.circle(self.image, color, (radio, radio), radio)
+
+	def update(self):
+		self.x += self.dx
+		self.y += self.dy
+		self.rect.center = (self.x, self.y)
+		self.verificar_limites()
+
+	def verificar_limites(self):
+		"Evita que una bola salga de la pantalla."
+
+		if self.rect.left < 0:
+			self.rect.left = 0
+			self.dx *= -1
+		elif self.rect.right > width:
+			self.rect.right = width
+			self.dx *= -1
+
+		if self.rect.top < 0:
+			self.rect.top = 0
+			self.dy *= -1
+		elif self.rect.bottom > height:
+			self.rect.bottom = height
+			self.dy *= -1
+
+	def empujar(self, dx, dy):
+		self.dx = dx
+		self.dy = dy
+
+	def colisiona_con(self, otra):
+		"""Reacciona si existe una colision con otra bola.
+
+		Retorna True si se produce la colisión, False en caso contrario."""
+		x, y, r = self.x, self.y, self.radio
+
+		if hypot((x - otra.x), (y - otra.y)) < r + otra.radio:
+			if otra.x - self.x == 0:
+				a = pi / 2.0
+			else:
+				a = atan((self.y - otra.y) / (otra.x - self.x))
+
+			v1r = self.dx * cos(-a) - (self.dy) * sin(-a)
+			v1s = self.dx * sin(-a) + (self.dy) * cos(-a)
+			v2r = otra.dx * cos(-a) - (otra.dy) * sin(-a)
+			v2s = otra.dx * sin(-a) + (otra.dy) * cos(-a)
+			v1r,  v2r = v2r,  v1r
+			self.dx = v1r * cos(a) - v1s * sin(a)
+			self.dy = (v1r * sin(a)) + (v1s * cos(a))
+			otra.dx = v2r * cos(a) - v2s * sin(a)
+			otra.dy = (v2r * sin(a)) + (v2s * cos(a))
+			return True
+		else:
+			return False
+
+def informar_colisiones(bolas):
+	copia_grupo = pygame.sprite.Group(bolas)
+
+	for a in bolas:
+		for b in copia_grupo:
+			if a != b and a.colisiona_con(b):
+				copia_grupo.remove(a)
+				copia_grupo.remove(b)
+
+def actualizar_pantalla(screen, bolas):
+	screen.fill((0, 0, 0))
+	bolas.draw(screen)
+	pygame.display.flip()
+
 def main():
-   pygame.init()
-   screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-   pygame.display.set_caption('Aterriza la nave')
-   icon, icon_rect = load_image('icon.gif')
-   pygame.display.set_icon(icon)
-   
-   background, background_rect = load_image('background.jpg')
-   screen.blit(background, (0,0))
-   
-   nave = Nave()
-   meteorito1 = Meteorito('big_rock1.gif')
-   todos_sprites = pygame.sprite.RenderPlain((nave, meteorito1))
-   clock = pygame.time.Clock()
-   
-   while True:
-      clock.tick(60)
-      
-      for event in pygame.event.get():
-         if event.type == pygame.QUIT:
-            raise SystemExit
-         elif event.type == pygame.KEYDOWN:
-            if event.key == K_ESCAPE:
-               raise SystemExit
-      
-      meteorito1.update()
-      nave.mueve_nave()
-      nave.gravedad(0.1)
-      nave.update()
-      
-      screen.blit(background, (0,0))
-      todos_sprites.draw(screen)
-      pygame.display.flip()
-   
-if __name__ == '__main__':   main()
-import os
-import pygame
+	screen = pygame.display.set_mode((width, height))
+	bolas = pygame.sprite.Group()
 
-from pygame.locals import *
-x = 100
-y = 0
-import os
-os.environ['SDL_VIDEO_CENTERED'] = '1'
+	b1 = Bola(x=400, y=100, radio=10)
+	b1.empujar(-1.5, 0.4)
 
-import pygame
-pygame.init()
-screen = pygame.display.set_mode((100,100))
+	b2 = Bola(250, 100, 20, color=(255, 0, 0))
+	b2.empujar(1.2, 0.4)
 
-# wait for a while to show the window.
-import time
-time.sleep(2)
+	b3 = Bola(40, 100, 10, color=(100, 0, 250))
+	b3.empujar(1.5, 0.3)
+
+	bolas.add([b1, b2, b3])
+
+	clock = pygame.time.Clock()
+
+	while True:
+		  
+		for e in pygame.event.get():
+			if e.type == QUIT:
+				return
+			
+		clock.tick(300)
+		actualizar_pantalla(screen, bolas)
+		bolas.update()
+		colisiones = informar_colisiones(bolas)
+
+if __name__ == '__main__':
+	main()
+

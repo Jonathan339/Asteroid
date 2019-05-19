@@ -8,11 +8,10 @@ class Nave(Animation):
 		super().__init__(image, x, y)
 		self.vida = 3
 		self.disparo = []
-		self.speed = [0,0]
+		self.disparo = []
+		
 
-		self.rect = self.image.get_rect()
-		self.rect.centerx = WIDTH / 2
-		self.rect.centery = 50
+	
 
 	def quitar_vida(self)->int:
 		"""
