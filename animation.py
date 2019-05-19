@@ -8,6 +8,8 @@ class Animation:
 
 	def __init__(self, image, x, y):
 		self.image = image
+		self.rect = self.image.get_rect()
+		self.rect.top, self.rect.left = 500, 300
 		self.x = x
 		self.y = y
 		self.vx = 0
@@ -32,28 +34,7 @@ class Animation:
 		self.x += self.vx
 		self.y += self.vy
 
-	def key_handle(self):
-		for event in pygame.event.get():
-			if event.type == pygame.K_ESCAPE:
-				pygame.quit()
-				sys.exit()
-				
+	
 
-	def handle_event(self, event):
-		if event.type == pygame.QUIT:
-			game_over = True
-
-		if event.type == pygame.KEYDOWN:
-
-			if event.key == pygame.K_LEFT:
-				self.update('left')
-			if event.key == pygame.K_RIGHT:
-				self.update('right')
-			if event.key == pygame.K_UP:
-				self.update('up')
-			if event.key == pygame.K_DOWN:
-				self.update('down')
-
-
-	def draw(self):
-		surface.blit(self.image, self.rect)
+	def draw(self, surface):
+		surface.blit(self.image, (self.x, self.y))
