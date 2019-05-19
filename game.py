@@ -15,15 +15,14 @@ class Game:
 		self.window = pygame.display.set_mode((WIDTH, HEIGHT), pygame.NOFRAME)
 		self.bg = pygame.image.load(os.path.join("data/image", "space.jpg"))
 		# cambia el icono
-		self.icon = pygame.image.load(
-			os.path.join("data/image", "asteroid.png"))
+		self.icon = pygame.image.load(os.path.join("data/image", "asteroid.png"))
 		pygame.display.set_icon(self.icon)
 		# corre el bucle del juego
 		self.run()
 		#
-		self.nav_img = pygame.image.load(os.path.join("data/image", "nave2.jpg"))
-		centro = 500,WIDTH/2
-		self.nave = Nave(self.nav_img, 450,centro)
+		nav_img = pygame.image.load(os.path.join("data/image", "nave2.png"))
+		
+		self.nave = Nave(nav_img,356,422)
 		self.nave.draw()
 
 	def run(self)-> None:
@@ -34,17 +33,18 @@ class Game:
 
 
 		while True:
-			self.window.blit(self.bg, (0, 0))
 			clock.tick(60)
+			self.window.blit(self.bg, (0, 0))
+			pygame.display.update()
+			
 
 
 			# codigo
 			self.key_press()
 
-			pygame.display.update()
+			
 
 	def key_press(self):
-
 		keys = pygame.key.get_pressed()
 		for event in pygame.event.get():
 			if event.type == pygame.KEYDOWN:
@@ -52,16 +52,11 @@ class Game:
 				if keys[pygame.K_ESCAPE]:
 					pygame.quit()
 					sys.exit()
+				elif event.type == pygame.QUIT:
+					pygame.quit()
+					sys.exit()
 
-	def key_handle(self):
-		for event in pygame.event.get():
-			if event.type == QUIT:
-				pygame.quit()
-				sys.exit()
-			elif event.type == pygame.K_ESCAPE:
-				pygame.quit()
-				sys.exit()
-
+	
 
 if __name__ == '__main__':
 	game = Game()
